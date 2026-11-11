@@ -68,6 +68,7 @@ jobs:
           path: result
 
   Container:
+    if: ${{ github.ref == 'refs/heads/main' || github.ref_type == 'tag' }}
     needs: [Build]
     strategy:
       matrix:
@@ -82,6 +83,8 @@ jobs:
       REGISTRY: ${{ vars.CONTAINER_REGISTRY }}
       IMAGE_NAME: ${{ vars.CONTAINER_IMAGE }}
       TAG: ${{ github.ref_name }}
+    permissions:
+      packages: write
     runs-on: ${{ matrix.target.runner }}
     steps:
       - name: Checkout
@@ -94,7 +97,7 @@ jobs:
           name: ${{ vars.CACHIX_NAME }}
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Build
-        run: nix build -L .#packages.${{ matrix.target.double }}.container
+        run: nix build -L .#container
       - name: Login
         run: skopeo login $REGISTRY --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }}
       - name: Push
