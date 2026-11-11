@@ -26,9 +26,6 @@
         "x86_64-linux"
       ];
 
-      # The Windows build of Boost seems to be broken, so we use an older version instead.
-      boost = pkgs: if pkgs.stdenv.hostPlatform.isWindows then pkgs.boost183 else pkgs.boost;
-
       # If building for Windows, appends -windows, otherwise nothing.
       windowsSuffix = pkgs: name: if pkgs.stdenv.hostPlatform.isWindows then "${name}-windows" else name;
 
@@ -44,7 +41,7 @@
           paths = [
             self.packages.${system}.${windowsSuffix' "mt-kahypar"}
             pkgs.tbb_2022
-            (boost pkgs)
+            pkgs.boost
           ]
           ++ lib.optionals pkgs.stdenv.cc.isGNU [ pkgs.libgcc ]
           ++ lib.optionals pkgs.stdenv.cc.isClang [ pkgs.libcxx ];
@@ -123,13 +120,11 @@
           arjun = pkgs-static.callPackage ./nix/arjun.nix {
             cryptominisat = self.packages.${system}.cryptominisat;
             sbva = self.packages.${system}.sbva;
-            boost = boost pkgs-static;
           };
 
           arjun-windows = pkgs-windows.callPackage ./nix/arjun.nix {
             cryptominisat = self.packages.${system}.cryptominisat-windows;
             sbva = self.packages.${system}.sbva-windows;
-            boost = boost pkgs-windows;
           };
 
           gpmc = pkgs-static.callPackage ./nix/gpmc.nix {
@@ -142,8 +137,9 @@
             cryptominisat = self.packages.${system}.cryptominisat-windows;
           };
 
-          mt-kahypar = pkgs.callPackage ./nix/mt-kahypar.nix { boost = boost pkgs; };
-          mt-kahypar-windows = pkgs-windows.callPackage ./nix/mt-kahypar.nix { boost = boost pkgs-windows; };
+          mt-kahypar = pkgs.callPackage ./nix/mt-kahypar.nix { };
+          mt-kahypar-static = pkgs-static.callPackage ./nix/mt-kahypar.nix { };
+          mt-kahypar-windows = pkgs-windows.callPackage ./nix/mt-kahypar.nix { };
 
           d4 = pkgs.callPackage ./nix/d4.nix {
             mt-kahypar = self.packages.${system}.mt-kahypar;
@@ -154,7 +150,17 @@
             glucose = self.packages.${system}.glucose;
             cadical = self.packages.${system}.cadical;
             cadiback = self.packages.${system}.cadiback;
-            boost = boost pkgs;
+          };
+
+          d4-static = pkgs-static.callPackage ./nix/d4.nix {
+            mt-kahypar = self.packages.${system}.mt-kahypar-static;
+            cryptominisat = self.packages.${system}.cryptominisat;
+            sbva = self.packages.${system}.sbva;
+            arjun = self.packages.${system}.arjun;
+            gpmc = self.packages.${system}.gpmc;
+            glucose = self.packages.${system}.glucose;
+            cadical = self.packages.${system}.cadical;
+            cadiback = self.packages.${system}.cadiback;
           };
 
           d4-windows = pkgs-windows.callPackage ./nix/d4.nix {
@@ -166,7 +172,6 @@
             glucose = self.packages.${system}.glucose-windows;
             cadical = self.packages.${system}.cadical-windows;
             cadiback = self.packages.${system}.cadiback-windows;
-            boost = boost pkgs-windows;
           };
 
           container = pkgs.dockerTools.buildLayeredImage {
